@@ -5,7 +5,7 @@ import type { Place } from "@/types";
 // before travelling. Edit freely: this is the personal, hand-picked layer.
 const U = "2026-10-12";
 
-const p = (
+export const p = (
   id: string,
   name: string,
   category: Place["category"],
@@ -16,7 +16,9 @@ const p = (
   extra: Partial<Place> = {},
 ): Place => ({ id, name, category, lat, lng, neighbourhood, shortDescription, source: "curated", sourceUpdatedAt: U, ...extra });
 
-export const SEED_PLACES: Place[] = [
+import { EXTRA_PLACES } from "./places.seed.extra";
+
+const CORE_PLACES: Place[] = [
   // ── Cafés & study ────────────────────────────────────────────────────────
   p("sormani", "Biblioteca Sormani", "cafes", 45.4626, 9.1992, "Porta Vittoria",
     "Milan's central public library in a palazzo with a courtyard garden. Quiet reading rooms a few minutes from campus.",
@@ -199,3 +201,5 @@ export const SEED_PLACES: Place[] = [
     "Pink flamingos living in a private villa garden; peer through the railings on Via Cappuccini.",
     { address: "Via dei Cappuccini 7", tags: ["free"] }),
 ];
+
+export const SEED_PLACES: Place[] = [...CORE_PLACES, ...EXTRA_PLACES];

@@ -33,6 +33,7 @@ export const categoryColors: Record<string, string> = {
   shopping: "#B8742A",
   essentials: "#4A6B8A",
   gems: "#D99A2B",
+  trips: "#2F6F9F",
 };
 
 export const verdictColors = {

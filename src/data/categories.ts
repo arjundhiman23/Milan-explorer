@@ -8,6 +8,7 @@ export const CATEGORIES: Category[] = [
   { id: "shopping", label: "Shopping", icon: "bag-handle-outline", sortOrder: 4 },
   { id: "essentials", label: "Essentials", icon: "medkit-outline", sortOrder: 5 },
   { id: "gems", label: "Hidden gems", icon: "sparkles-outline", sortOrder: 6 },
+  { id: "trips", label: "Day trips", icon: "train-outline", sortOrder: 7 },
 ];
 
 export const VERDICTS: { id: Verdict; label: string; short: string; icon: string }[] = [

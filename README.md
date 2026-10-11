@@ -85,7 +85,7 @@ supabase/schema.sql  tables, RLS policies, storage bucket
 
 ## Curated places
 
-`src/data/places.seed.ts` is the hand-picked layer: ~55 places across the seven categories around Santa Sofia, Via Festa del Perdono, Via Conservatorio and Comasina. Coordinates are approximate and opening hours are deliberately omitted — the app never claims a place is open. Edit the file freely; the seed is merged into the store on every launch, so edits appear after a restart without losing the user's own data.
+`src/data/places.seed.ts` + `places.seed.extra.ts` are the hand-picked layer: ~165 places across eight categories — cafés and libraries around Via Festa del Perdono and Via Conservatorio, groceries and transit, museums, parks and lidos, markets, and a Day trips category for the lakes, beaches and vineyards outside the city. Coordinates are approximate and opening hours are deliberately omitted — the app never claims a place is open. Edit the file freely; the seed is merged into the store on every launch, so edits appear after a restart without losing the user's own data.
 
 ## Privacy (as shipped)
 

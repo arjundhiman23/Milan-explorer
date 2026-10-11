@@ -1,5 +1,5 @@
 export type CategoryId =
-  | "cafes" | "food" | "culture" | "outdoors" | "shopping" | "essentials" | "gems";
+  | "cafes" | "food" | "culture" | "outdoors" | "shopping" | "essentials" | "gems" | "trips";
 
 export type Verdict = "want" | "again" | "once" | "never";
 
