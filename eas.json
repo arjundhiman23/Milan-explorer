@@ -11,6 +11,9 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://bkrheghedfiiapuocvey.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_ixoII8yOkbwXb-173c1-Pw_TGjsKrD_"
+      },
+      "ios": {
+        "simulator": true
       }
     },
     "production": {
@@ -20,7 +23,8 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://bkrheghedfiiapuocvey.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_ixoII8yOkbwXb-173c1-Pw_TGjsKrD_"
-      }
+      },
+      "ios": {}
     }
   }
 }

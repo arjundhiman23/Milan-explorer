@@ -54,6 +54,15 @@ npm run apk:local      # expo prebuild + gradlew assembleRelease
 
 The native map module is not in Expo Go; use a development build (`eas build --profile development`) or the APK above to test on a phone.
 
+## iOS (native app)
+
+The same codebase builds for iOS; `@maplibre/maplibre-react-native` and every other module here support it. Two routes:
+
+- **Simulator build (free, Mac only):** `eas build --platform ios --profile preview` produces a `.app` you drag into the iOS Simulator (needs Xcode installed).
+- **Install on a real iPhone:** requires an Apple Developer account (US$99/yr). `eas build --platform ios --profile production`, then install via TestFlight, or `eas build --profile development` + `eas device:create` for ad-hoc installs. EAS manages the certificates and provisioning profiles for you.
+
+Without a Mac, the simulator route isn't available but the TestFlight route still works entirely through EAS cloud builds.
+
 ## Project layout
 
 ```

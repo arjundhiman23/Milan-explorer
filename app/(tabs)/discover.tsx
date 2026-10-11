@@ -65,7 +65,7 @@ export default function DiscoverScreen() {
           </Pressable>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
             {items.map((x) => (
-              <Pressable key={x.place.id} onPress={() => router.push(`/place/${x.place.id}`)} accessibilityRole="button" style={styles.tile}>
+              <Pressable key={x.place.id} onPress={() => router.push(`/place/${x.place.id}`)} accessible accessibilityLabel={`${x.place.name}. Opens details`} style={styles.tile}>
                 <View style={[styles.tileBand, { backgroundColor: categoryColors[cat.id] }]} />
                 <View style={{ padding: 14, flex: 1 }}>
                   <Text v="small" color={colors.inkMuted} numberOfLines={1}>{x.place.neighbourhood} · {formatDistance(x.distance)}</Text>

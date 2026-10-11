@@ -40,19 +40,49 @@
       "expo-router",
       "expo-font",
       "expo-secure-store",
-      ["expo-splash-screen", { "backgroundColor": "#14181C", "image": "./assets/splash-icon.png", "imageWidth": 160 }],
-      ["expo-location", {
-        "locationAlwaysAndWhenInUsePermission": "Milan Explorer only uses your location when you tap the locate button, to show places near you. It never tracks you in the background.",
-        "locationWhenInUsePermission": "Milan Explorer only uses your location when you tap the locate button, to show places near you.",
-        "isAndroidBackgroundLocationEnabled": false
-      }],
-      ["expo-image-picker", {
-        "photosPermission": "Milan Explorer only opens your photos when you choose to attach one to a visit.",
-        "cameraPermission": "Milan Explorer only opens the camera when you choose to take a photo for a visit."
-      }],
-      ["expo-build-properties", { "android": { "minSdkVersion": 24 } }],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#14181C",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Milan Explorer only uses your location when you tap the locate button, to show places near you. It never tracks you in the background.",
+          "locationWhenInUsePermission": "Milan Explorer only uses your location when you tap the locate button, to show places near you.",
+          "isAndroidBackgroundLocationEnabled": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Milan Explorer only opens your photos when you choose to attach one to a visit.",
+          "cameraPermission": "Milan Explorer only opens the camera when you choose to take a photo for a visit."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24
+          }
+        }
+      ],
       "@maplibre/maplibre-react-native"
     ],
-    "experiments": { "typedRoutes": false }
+    "experiments": {
+      "typedRoutes": false
+    },
+    "ios": {
+      "bundleIdentifier": "com.milanexplorer.app",
+      "supportsTablet": false,
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
   }
 }

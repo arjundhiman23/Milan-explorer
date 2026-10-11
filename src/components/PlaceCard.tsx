@@ -23,7 +23,9 @@ export const PlaceCard = memo(function PlaceCard({ item, onOpen, onSave, onVisit
   const cat = CATEGORIES.find((c) => c.id === place.category)!;
   const color = categoryColors[place.category];
   return (
-    <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`${place.name}, ${cat.label}, ${formatDistance(distance)} away`}
+    // Outer press target is a plain view (not role="button"): on web, nested
+    // <button> elements are invalid HTML, and the Save/Visited actions inside are buttons.
+    <Pressable onPress={onOpen} accessible accessibilityLabel={`${place.name}, ${cat.label}, ${formatDistance(distance)} away. Opens details`}
       style={({ pressed }) => [styles.card, width ? { width } : null, pressed && { transform: [{ scale: 0.985 }] }]}>
       <View style={[styles.band, { backgroundColor: color }]} />
       <View style={styles.body}>
