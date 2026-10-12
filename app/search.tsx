@@ -8,11 +8,13 @@ import { CATEGORIES } from "@/data/categories";
 import { useShallow } from "zustand/react/shallow";
 import { useStore, originOf } from "@/store/useStore";
 import { searchPhoton } from "@/lib/photon";
+import { searchOverpass, overpassFiltersFor } from "@/lib/overpass";
+import { scoreLocal } from "@/lib/search";
 import { distanceMeters, formatDistance } from "@/lib/geo";
 import { categoryColors, colors, fonts, radius, space } from "@/theme/tokens";
 import type { Place } from "@/types";
 
-type Row = { place: Place; distance: number; section: "local" | "osm" };
+type Row = { place: Place; distance: number; section: "local" | "osm"; score?: number };
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -28,15 +30,15 @@ export default function SearchScreen() {
   const select = useStore((s) => s.select);
   const setCategories = useStore((s) => s.setCategories);
 
+  const radius = useStore((s) => s.radius);
+
+  // Local: fuzzy name match + synonyms ("pizza" finds every pizzeria, "study" finds libraries).
   const local = useMemo<Row[]>(() => {
-    const t = q.trim().toLowerCase();
-    if (!t) return [];
-    const catHit = CATEGORIES.filter((c) => c.label.toLowerCase().includes(t)).map((c) => c.id);
-    return Object.values(places)
-      .filter((p) => p.name.toLowerCase().includes(t) || catHit.includes(p.category) || p.neighbourhood?.toLowerCase().includes(t) || p.tags?.some((x) => x.includes(t)) || p.address?.toLowerCase().includes(t))
-      .map((place) => ({ place, distance: distanceMeters(origin, place), section: "local" as const }))
-      .sort((a, b) => a.distance - b.distance)
-      .slice(0, 12);
+    if (!q.trim()) return [];
+    return scoreLocal(q, Object.values(places))
+      .map(({ place, score }) => ({ place, score, distance: distanceMeters(origin, place), section: "local" as const }))
+      .sort((a, b) => b.score - a.score || a.distance - b.distance)
+      .slice(0, 20);
   }, [q, places, origin]);
 
   useEffect(() => {
@@ -47,13 +49,23 @@ export default function SearchScreen() {
     abort.current = ctrl;
     setLoading(true);
     const t = setTimeout(() => {
-      searchPhoton(q, origin, 10, ctrl.signal)
-        .then((res) => { if (!ctrl.signal.aborted) setOsm(res.filter((p) => !places[p.id])); })
+      // Name search (Photon) plus, when the query names a kind of place,
+      // a category search around the origin (Overpass).
+      const jobs: Promise<Place[]>[] = [searchPhoton(q, origin, 10, ctrl.signal)];
+      if (overpassFiltersFor(q)) jobs.push(searchOverpass(q, origin, Math.max(radius, 2000), ctrl.signal).catch(() => []));
+      Promise.all(jobs)
+        .then((lists) => {
+          if (ctrl.signal.aborted) return;
+          const seen = new Set<string>();
+          const merged = lists.flat().filter((p) => !places[p.id] && !seen.has(p.id) && seen.add(p.id));
+          merged.sort((a, b) => distanceMeters(origin, a) - distanceMeters(origin, b));
+          setOsm(merged.slice(0, 30));
+        })
         .catch((e) => { if (!ctrl.signal.aborted) setError(e?.message ?? "Search failed"); })
         .finally(() => { if (!ctrl.signal.aborted) setLoading(false); });
     }, 350);
     return () => { clearTimeout(t); ctrl.abort(); };
-  }, [q, origin.lat, origin.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [q, origin.lat, origin.lng, radius]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const rows: Row[] = [...local, ...osm.map((place) => ({ place, distance: distanceMeters(origin, place), section: "osm" as const }))];
 
@@ -83,7 +95,7 @@ export default function SearchScreen() {
               </Pressable>
             ))}
           </View>
-          <Text v="small" color={colors.inkMuted} style={{ marginTop: space.xl }}>Type three or more letters to also search OpenStreetMap for anything in Milan.</Text>
+          <Text v="small" color={colors.inkMuted} style={{ marginTop: space.xl }}>Search by name, or by what you want — "pizza", "study", "gelato", "supermarket" — to see everything nearby, including places not on this map yet.</Text>
         </View>
       ) : (
         <FlatList
@@ -97,7 +109,7 @@ export default function SearchScreen() {
             const firstOsm = item.section === "osm" && (index === 0 || rows[index - 1].section === "local");
             return (
               <>
-                {firstOsm && <Text v="label" color={colors.inkMuted} style={styles.sectionHead}>From OpenStreetMap</Text>}
+                {firstOsm && <Text v="label" color={colors.inkMuted} style={styles.sectionHead}>Nearby from OpenStreetMap</Text>}
                 <Pressable onPress={() => open(item)} style={styles.row} accessibilityRole="button">
                   <View style={[styles.dot, { backgroundColor: categoryColors[item.place.category] }]}><Ionicons name={cat.icon as any} size={15} color={colors.white} /></View>
                   <View style={{ flex: 1 }}>

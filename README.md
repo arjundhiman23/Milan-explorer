@@ -8,7 +8,7 @@ A personal, animated map of places to discover, visit and remember — built fro
 |---|---|
 | App | Expo SDK 57, Expo Router, TypeScript, Reanimated 4 |
 | Map | MapLibre — `maplibre-gl` on web, `@maplibre/maplibre-react-native` on Android; OpenFreeMap "positron" tiles (no API key) |
-| Live search | Photon (OpenStreetMap data, no API key), bounded to Milan |
+| Live search | Photon for names + Overpass for categories ("pizza" → every pizzeria near the base); OpenStreetMap data, no API key |
 | Local data | Zustand store persisted to AsyncStorage (local-first, works offline) |
 | Account & backup | Supabase auth + Postgres + private storage bucket (`supabase/schema.sql`) |
 | Navigation handoff | `geo:` intent on Android → Google Maps / any maps app; web falls back to Google Maps |
