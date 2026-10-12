@@ -24,7 +24,8 @@
       },
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
       ],
       "blockedPermissions": [
         "android.permission.ACCESS_BACKGROUND_LOCATION"
@@ -83,6 +84,13 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bfd849ac-14ac-4d38-99a7-d6b5476e02fc"
+      }
+    },
+    "owner": "arjundhiman_23"
   }
 }
