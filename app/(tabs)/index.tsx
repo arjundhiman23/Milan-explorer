@@ -14,7 +14,8 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useNearbyPlaces, useOrigin, type PlaceWithMeta } from "@/hooks/usePlaces";
 import { useLiveLocation } from "@/hooks/useLiveLocation";
-import { useStore } from "@/store/useStore";
+import { useShallow } from "zustand/react/shallow";
+import { useStore, activeBases } from "@/store/useStore";
 import { colors, radius, shadow, space } from "@/theme/tokens";
 import { formatRadius } from "@/lib/geo";
 import { RADII } from "@/types";
@@ -39,7 +40,7 @@ export default function ExploreScreen() {
   const setCategories = useStore((s) => s.setCategories);
   const reducedMotion = useStore((s) => s.settings.reducedMotion);
   const locationMode = useStore((s) => s.settings.locationMode);
-  const bases = useStore((s) => s.bases);
+  const bases = useStore(useShallow(activeBases));
   const activeBaseId = useStore((s) => s.settings.activeBaseId);
   const setActiveBase = useStore((s) => s.setActiveBase);
   const savePlace = useStore((s) => s.savePlace);

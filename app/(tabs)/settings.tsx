@@ -7,7 +7,8 @@ import { Text } from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useStore } from "@/store/useStore";
+import { useShallow } from "zustand/react/shallow";
+import { useStore, activeBases } from "@/store/useStore";
 import { CATEGORIES } from "@/data/categories";
 import { colors, radius, space } from "@/theme/tokens";
 import { getSupabase } from "@/lib/supabase";
@@ -24,7 +25,7 @@ export default function SettingsScreen() {
   const settings = useStore((s) => s.settings);
   const setSettings = useStore((s) => s.setSettings);
   const setRadius = useStore((s) => s.setRadius);
-  const bases = useStore((s) => s.bases);
+  const bases = useStore(useShallow(activeBases));
   const lastSyncAt = useStore((s) => s.lastSyncAt);
   const dirty = useStore((s) => s.dirty);
   const importData = useStore((s) => s.importData);

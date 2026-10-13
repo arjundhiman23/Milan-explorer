@@ -2,7 +2,7 @@
   "expo": {
     "name": "Milan Explorer",
     "slug": "milan-explorer",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "scheme": "milanexplorer",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +15,7 @@
     },
     "android": {
       "package": "com.milanexplorer.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#14181C",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -80,7 +80,7 @@
     "ios": {
       "bundleIdentifier": "com.milanexplorer.app",
       "supportsTablet": false,
-      "buildNumber": "1",
+      "buildNumber": "3",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }

@@ -7,7 +7,8 @@ import { Text } from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { useToast } from "@/components/ui/Toast";
-import { useStore } from "@/store/useStore";
+import { useShallow } from "zustand/react/shallow";
+import { useStore, activeBases } from "@/store/useStore";
 import { useLiveLocation } from "@/hooks/useLiveLocation";
 import { searchPhoton } from "@/lib/photon";
 import { colors, radius, space } from "@/theme/tokens";
@@ -17,7 +18,7 @@ export default function BasesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const toast = useToast();
-  const bases = useStore((s) => s.bases);
+  const bases = useStore(useShallow(activeBases));
   const activeId = useStore((s) => s.settings.activeBaseId);
   const addBase = useStore((s) => s.addBase);
   const updateBase = useStore((s) => s.updateBase);

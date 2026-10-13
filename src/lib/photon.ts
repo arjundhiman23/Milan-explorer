@@ -14,7 +14,7 @@ const OSM_TO_CATEGORY: Array<[RegExp, CategoryId]> = [
   [/^(pharmacy|chemist|laundry|dry_cleaning|post_office|bank|atm|hospital|doctors|dentist|clinic|police|bus_station|station|subway_entrance|copyshop|mobile_phone)/, "essentials"],
 ];
 
-function mapCategory(osmKey?: string, osmValue?: string): CategoryId {
+export function mapCategory(osmKey?: string, osmValue?: string): CategoryId {
   const v = (osmValue ?? "").toLowerCase();
   if (osmKey === "shop" && /^(supermarket|convenience|chemist|laundry)/.test(v)) return "essentials";
   if (osmKey === "shop") return "shopping";
@@ -34,7 +34,8 @@ export interface PhotonFeature {
 export async function searchPhoton(query: string, near?: { lat: number; lng: number }, limit = 12, signal?: AbortSignal): Promise<Place[]> {
   const q = query.trim();
   if (q.length < 2) return [];
-  const params = new URLSearchParams({ q, limit: String(limit), lang: "en" });
+  // No lang param: Photon then returns local (Italian) names, as signs show them.
+  const params = new URLSearchParams({ q, limit: String(limit) });
   params.set("bbox", `${MILAN_BBOX.west},${MILAN_BBOX.south},${MILAN_BBOX.east},${MILAN_BBOX.north}`);
   if (near) { params.set("lat", String(near.lat)); params.set("lon", String(near.lng)); }
   const res = await fetch(`${ENDPOINT}?${params.toString()}`, { signal });

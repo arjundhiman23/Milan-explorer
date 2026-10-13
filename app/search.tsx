@@ -8,8 +8,8 @@ import { CATEGORIES } from "@/data/categories";
 import { useShallow } from "zustand/react/shallow";
 import { useStore, originOf } from "@/store/useStore";
 import { searchPhoton } from "@/lib/photon";
-import { searchOverpass, overpassFiltersFor } from "@/lib/overpass";
-import { scoreLocal } from "@/lib/search";
+import { searchOverpass, overpassPlan } from "@/lib/overpass";
+import { scoreLocal, acceptRemoteResult } from "@/lib/search";
 import { distanceMeters, formatDistance } from "@/lib/geo";
 import { categoryColors, colors, fonts, radius, space } from "@/theme/tokens";
 import type { Place } from "@/types";
@@ -51,8 +51,9 @@ export default function SearchScreen() {
     const t = setTimeout(() => {
       // Name search (Photon) plus, when the query names a kind of place,
       // a category search around the origin (Overpass).
-      const jobs: Promise<Place[]>[] = [searchPhoton(q, origin, 10, ctrl.signal)];
-      if (overpassFiltersFor(q)) jobs.push(searchOverpass(q, origin, Math.max(radius, 2000), ctrl.signal).catch(() => []));
+      // Photon fuzzes names (pizza → Piazza), so its results must really match.
+      const jobs: Promise<Place[]>[] = [searchPhoton(q, origin, 15, ctrl.signal).then((r) => r.filter((p) => acceptRemoteResult(q, p))).catch(() => [])];
+      if (overpassPlan(q)) jobs.push(searchOverpass(q, origin, Math.max(radius, 2000), ctrl.signal).catch(() => []));
       Promise.all(jobs)
         .then((lists) => {
           if (ctrl.signal.aborted) return;
@@ -95,7 +96,13 @@ export default function SearchScreen() {
               </Pressable>
             ))}
           </View>
-          <Text v="small" color={colors.inkMuted} style={{ marginTop: space.xl }}>Search by name, or by what you want — "pizza", "study", "gelato", "supermarket" — to see everything nearby, including places not on this map yet.</Text>
+          <Text v="label" color={colors.inkMuted} style={{ marginTop: space.xl, marginBottom: 10 }}>Or search for what you want</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {["pizza", "aula studio", "aperitivo", "kebab", "gelato", "supermercato", "tabacchi", "farmacia", "sushi", "brunch"].map((t) => (
+              <Pressable key={t} onPress={() => setQ(t)} style={styles.catChip}><Text v="smallMedium">{t}</Text></Pressable>
+            ))}
+          </View>
+          <Text v="small" color={colors.inkMuted} style={{ marginTop: space.xl }}>Search in English or Italian, by name or by what you want — dishes, cuisines, shops, services. Results include everything nearby on OpenStreetMap, not only this map.</Text>
         </View>
       ) : (
         <FlatList
@@ -138,7 +145,7 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.marble },
   bar: { flexDirection: "row", alignItems: "center", marginHorizontal: 16, height: 52, paddingHorizontal: 14, backgroundColor: colors.white, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, gap: 10 },
-  input: { flex: 1, fontFamily: fonts.body, fontSize: 16, color: colors.ink, height: 52 },
+  input: { flex: 1, fontFamily: fonts.body, fontSize: 16, color: colors.ink, height: 52, outlineStyle: "none" } as any,
   catChip: { flexDirection: "row", alignItems: "center", backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderRadius: radius.pill, height: 36, paddingHorizontal: 12 },
   sectionHead: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 6 },
   row: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, gap: 12 },

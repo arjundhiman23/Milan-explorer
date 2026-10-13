@@ -6,7 +6,8 @@ import Animated, { FadeIn, FadeInUp, FadeOut } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { Text } from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
-import { useStore } from "@/store/useStore";
+import { useShallow } from "zustand/react/shallow";
+import { useStore, activeBases } from "@/store/useStore";
 import { useLiveLocation } from "@/hooks/useLiveLocation";
 import { supabaseConfigured } from "@/lib/supabase";
 import { colors, fonts, radius, space } from "@/theme/tokens";
@@ -17,7 +18,7 @@ export default function Onboarding() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState<Step>("welcome");
-  const bases = useStore((s) => s.bases);
+  const bases = useStore(useShallow(activeBases));
   const setActiveBase = useStore((s) => s.setActiveBase);
   const setSettings = useStore((s) => s.setSettings);
   const activeBaseId = useStore((s) => s.settings.activeBaseId);

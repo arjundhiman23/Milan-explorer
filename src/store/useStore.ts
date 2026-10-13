@@ -5,6 +5,7 @@ import type { BaseLocation, CategoryId, Place, Settings, UserPlace, Verdict } fr
 import { SEED_PLACES } from "@/data/places.seed";
 import { DEFAULT_BASES } from "@/data/bases";
 import { nowIso, uid } from "@/lib/ids";
+import { mergeBases, tombstoneBase } from "@/lib/merge";
 
 export interface VisitInput {
   rating: number;
@@ -141,14 +142,18 @@ export const useStore = create<State>()(
 
       addBase: (b) => {
         const id = uid("base");
-        set((s) => ({ bases: [...s.bases, { ...b, id }], dirty: true }));
+        set((s) => ({ bases: [...s.bases, { ...b, id, updatedAt: nowIso() }], dirty: true }));
         return id;
       },
-      updateBase: (id, patch) => set((s) => ({ bases: s.bases.map((b) => (b.id === id ? { ...b, ...patch } : b)), dirty: true })),
+      updateBase: (id, patch) => set((s) => ({ bases: s.bases.map((b) => (b.id === id ? { ...b, ...patch, updatedAt: nowIso() } : b)), dirty: true })),
       removeBase: (id) =>
         set((s) => {
-          const bases = s.bases.filter((b) => b.id !== id);
-          const activeBaseId = s.settings.activeBaseId === id ? bases[0]?.id ?? "" : s.settings.activeBaseId;
+          // Tombstone instead of filtering out: a missing row can't tell sync
+          // "this was deleted", so the server copy used to be pulled straight back.
+          const t = nowIso();
+          const bases = tombstoneBase(s.bases, id, t);
+          const firstActive = bases.find((b) => !b.deletedAt)?.id ?? "";
+          const activeBaseId = s.settings.activeBaseId === id ? firstActive : s.settings.activeBaseId;
           return { bases, settings: { ...s.settings, activeBaseId }, dirty: true };
         }),
       setActiveBase: (id) => set((s) => ({ settings: { ...s.settings, activeBaseId: id, locationMode: "base" }, selectedPlaceId: null })),
@@ -172,11 +177,12 @@ export const useStore = create<State>()(
             const local = merged[r.placeId];
             if (!local || new Date(r.updatedAt) >= new Date(local.updatedAt)) merged[r.placeId] = r;
           }
-          const baseMap = new Map(s.bases.map((b) => [b.id, b]));
-          for (const b of bases) baseMap.set(b.id, b);
+          const merged2 = mergeBases(s.bases, bases);
           const placeMap = { ...s.places };
           for (const p of places) placeMap[p.id] = { ...placeMap[p.id], ...p };
-          return { userPlaces: merged, bases: [...baseMap.values()], places: placeMap };
+          const activeOk = merged2.some((b) => b.id === s.settings.activeBaseId && !b.deletedAt);
+          const settings = activeOk ? s.settings : { ...s.settings, activeBaseId: merged2.find((b) => !b.deletedAt)?.id ?? "" };
+          return { userPlaces: merged, bases: merged2, places: placeMap, settings };
         }),
       markSynced: () => set({ dirty: false, lastSyncAt: nowIso() }),
       setUserId: (id) => set({ userId: id }),
@@ -188,9 +194,7 @@ export const useStore = create<State>()(
           for (const up of data.userPlaces ?? []) userPlaces[up.placeId] = up;
           const places = { ...s.places };
           for (const p of data.places ?? []) places[p.id] = p;
-          const baseMap = new Map(s.bases.map((b) => [b.id, b]));
-          for (const b of data.bases ?? []) baseMap.set(b.id, b);
-          return { userPlaces, places, bases: [...baseMap.values()], dirty: true };
+          return { userPlaces, places, bases: mergeBases(s.bases, data.bases ?? []), dirty: true };
         }),
 
       clearPersonalData: () =>
@@ -203,7 +207,18 @@ export const useStore = create<State>()(
     }),
     {
       name: "milan-explorer-v1",
+      version: 2,
       storage: createJSONStorage(() => AsyncStorage),
+      migrate: (persisted: any, fromVersion) => {
+        // v2: Comasina is no longer a base. Tombstone it so the removal also syncs.
+        if (persisted && fromVersion < 2 && Array.isArray(persisted.bases)) {
+          const t = nowIso();
+          persisted.bases = persisted.bases.map((b: BaseLocation) => (b.id === "comasina" && !b.deletedAt ? { ...b, deletedAt: t, updatedAt: t } : b));
+          if (persisted.settings?.activeBaseId === "comasina") persisted.settings.activeBaseId = "santa-sofia";
+          persisted.dirty = true;
+        }
+        return persisted;
+      },
       partialize: (s) => ({
         places: s.places,
         userPlaces: s.userPlaces,
@@ -226,9 +241,11 @@ export const useStore = create<State>()(
 
 // ── Selectors ─────────────────────────────────────────────────────────────
 export const activeUserPlaces = (s: State) => Object.values(s.userPlaces).filter((u) => !u.deletedAt);
+export const activeBases = (s: State) => s.bases.filter((b) => !b.deletedAt);
 
 export function originOf(s: State): { lat: number; lng: number; label: string } {
   if (s.settings.locationMode === "live" && s.liveLocation) return { ...s.liveLocation, label: "Current location" };
-  const base = s.bases.find((b) => b.id === s.settings.activeBaseId) ?? s.bases[0];
+  const live = activeBases(s);
+  const base = live.find((b) => b.id === s.settings.activeBaseId) ?? live[0];
   return base ? { lat: base.lat, lng: base.lng, label: base.label } : { lat: 45.4642, lng: 9.19, label: "Milan" };
 }

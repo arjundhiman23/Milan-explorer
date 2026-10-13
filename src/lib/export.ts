@@ -8,7 +8,7 @@ export function buildExportJson(): string {
   const s = useStore.getState();
   const ups = activeUserPlaces(s);
   const places = ups.map((u) => s.places[u.placeId]).filter(Boolean);
-  return JSON.stringify({ app: "milan-explorer", version: 1, exportedAt: new Date().toISOString(), bases: s.bases, places, userPlaces: ups }, null, 2);
+  return JSON.stringify({ app: "milan-explorer", version: 1, exportedAt: new Date().toISOString(), bases: s.bases.filter((b) => !b.deletedAt), places, userPlaces: ups }, null, 2);
 }
 
 export function buildExportCsv(): string {

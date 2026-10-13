@@ -44,6 +44,8 @@ create table if not exists public.bases (
   lat double precision not null,
   lng double precision not null,
   is_default boolean default false,
+  updated_at text,
+  deleted_at text,
   primary key (user_id, id)
 );
 

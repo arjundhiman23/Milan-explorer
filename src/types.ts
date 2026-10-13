@@ -42,6 +42,8 @@ export interface BaseLocation {
   lat: number;
   lng: number;
   isDefault?: boolean;
+  updatedAt?: string;
+  deletedAt?: string; // tombstone: kept so the deletion syncs instead of being re-pulled
 }
 
 export interface Settings {

@@ -17,17 +17,34 @@ export async function syncNow(): Promise<void> {
     const { data: sess } = await sb.auth.getSession();
     const user = sess.session?.user;
     if (!user) return;
-    const s = useStore.getState();
 
     // 1. Upload any local photos that are not yet in storage.
     await uploadPendingPhotos(user.id);
 
-    // 2. Push local rows.
+    // 2. Pull first, merge newest-wins (tombstones included). Pushing first
+    //    used to let a stale copy overwrite newer edits from another device.
+    const [upRes, baseRes] = await Promise.all([
+      sb.from("user_places").select("*").eq("user_id", user.id),
+      sb.from("bases").select("*").eq("user_id", user.id),
+    ]);
+    if (upRes.error) throw upRes.error;
+    if (baseRes.error) throw baseRes.error;
+    const remoteUps = (upRes.data ?? []).map(rowToUserPlace);
+    const known = useStore.getState().places;
+    const missing = remoteUps.map((u) => u.placeId).filter((id) => !known[id]);
+    let remotePlaces: Place[] = [];
+    if (missing.length) {
+      const { data, error } = await sb.from("places").select("*").in("id", missing);
+      if (error) throw error;
+      remotePlaces = (data ?? []).map(rowToPlace);
+    }
+    useStore.getState().applyRemote({ userPlaces: remoteUps, bases: (baseRes.data ?? []).map(rowToBase), places: remotePlaces });
+
+    // 3. Push the merged state.
     const st = useStore.getState();
     const ups = Object.values(st.userPlaces);
     const referenced = new Set(ups.map((u) => u.placeId));
     const places = Object.values(st.places).filter((p) => referenced.has(p.id));
-
     if (places.length) {
       const { error } = await sb.from("places").upsert(places.map(placeToRow), { onConflict: "id" });
       if (error) throw error;
@@ -36,30 +53,31 @@ export async function syncNow(): Promise<void> {
       const { error } = await sb.from("user_places").upsert(ups.map((u) => userPlaceToRow(u, user.id)), { onConflict: "user_id,place_id" });
       if (error) throw error;
     }
-    if (st.bases.length) {
-      const { error } = await sb.from("bases").upsert(st.bases.map((b) => baseToRow(b, user.id)), { onConflict: "user_id,id" });
-      if (error) throw error;
-    }
+    await pushBases(st.bases, user.id);
 
-    // 3. Pull everything and merge newest-wins.
-    const [upRes, baseRes] = await Promise.all([
-      sb.from("user_places").select("*").eq("user_id", user.id),
-      sb.from("bases").select("*").eq("user_id", user.id),
-    ]);
-    if (upRes.error) throw upRes.error;
-    if (baseRes.error) throw baseRes.error;
-    const remoteUps = (upRes.data ?? []).map(rowToUserPlace);
-    const placeIds = remoteUps.map((u) => u.placeId).filter((id) => !s.places[id]);
-    let remotePlaces: Place[] = [];
-    if (placeIds.length) {
-      const { data, error } = await sb.from("places").select("*").in("id", placeIds);
-      if (error) throw error;
-      remotePlaces = (data ?? []).map(rowToPlace);
-    }
-    useStore.getState().applyRemote({ userPlaces: remoteUps, bases: (baseRes.data ?? []).map(rowToBase), places: remotePlaces });
     useStore.getState().markSynced();
   })().finally(() => { inFlight = null; });
   return inFlight;
+}
+
+async function pushBases(bases: BaseLocation[], userId: string) {
+  const sb = getSupabase()!;
+  if (!bases.length) return;
+  const { error } = await sb.from("bases").upsert(bases.map((b) => baseToRow(b, userId)), { onConflict: "user_id,id" });
+  if (!error) return;
+  // Database not migrated yet (no updated_at / deleted_at columns): fall back
+  // to hard-deleting tombstoned bases so deletions still stick on this account.
+  if (!/updated_at|deleted_at|column/i.test(error.message)) throw error;
+  const dead = bases.filter((b) => b.deletedAt).map((b) => b.id);
+  const live = bases.filter((b) => !b.deletedAt);
+  if (dead.length) {
+    const del = await sb.from("bases").delete().eq("user_id", userId).in("id", dead);
+    if (del.error) throw del.error;
+  }
+  if (live.length) {
+    const up = await sb.from("bases").upsert(live.map((b) => legacyBaseRow(b, userId)), { onConflict: "user_id,id" });
+    if (up.error) throw up.error;
+  }
 }
 
 export function scheduleSync(delay = 1500) {
@@ -101,9 +119,12 @@ function rowToUserPlace(r: any): UserPlace {
     createdAt: r.created_at, updatedAt: r.updated_at, deletedAt: r.deleted_at ?? undefined,
   };
 }
-function baseToRow(b: BaseLocation, userId: string) {
+function legacyBaseRow(b: BaseLocation, userId: string) {
   return { id: b.id, user_id: userId, label: b.label, lat: b.lat, lng: b.lng, is_default: b.isDefault ?? false };
 }
+function baseToRow(b: BaseLocation, userId: string) {
+  return { ...legacyBaseRow(b, userId), updated_at: b.updatedAt ?? null, deleted_at: b.deletedAt ?? null };
+}
 function rowToBase(r: any): BaseLocation {
-  return { id: r.id, label: r.label, lat: r.lat, lng: r.lng, isDefault: r.is_default ?? false };
+  return { id: r.id, label: r.label, lat: r.lat, lng: r.lng, isDefault: r.is_default ?? false, updatedAt: r.updated_at ?? undefined, deletedAt: r.deleted_at ?? undefined };
 }

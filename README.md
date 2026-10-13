@@ -34,6 +34,12 @@ Without Supabase keys, Settings shows "Cloud backup is off" and everything is sa
 
 Sync is local-first: every change is pushed ~1.5 s later when signed in; on sign-in the account's data is pulled and merged newest-wins. Deletions are tombstoned so they sync across devices.
 
+## Database migrations
+
+New projects: run `supabase/schema.sql` once. Existing projects: run each file in `supabase/migrations/` that you haven't run yet, in order, in the SQL editor.
+
+- `002_base_tombstones.sql` — lets base deletions sync (adds `updated_at` / `deleted_at` to `bases`) and retires the Comasina default base. The app keeps working before it's run, using hard deletes as a fallback.
+
 ## Build the Android APK
 
 **Cloud (recommended, no Android Studio needed):**
